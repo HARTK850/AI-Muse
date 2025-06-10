@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* מצב לילה (ברירת מחדל) */
+            /* מצב כהה (ברירת מחדל) */
             --primary-bg: #1a1a2e; /* כחול כהה עמוק */
             --secondary-bg: #16213e; /* כחול כהה יותר */
             --text-color: #e0e0e0; /* אפור בהיר לטקסט */
@@ -47,7 +47,6 @@
             transition: background-color 0.5s ease, color 0.5s ease;
         }
 
-        /* תפריט צדדי */
         .sidebar {
             width: 280px;
             background-color: var(--secondary-bg);
@@ -68,7 +67,7 @@
             margin-bottom: 35px;
             font-size: 2em;
             letter-spacing: 1.5px;
-            text-shadow: 0 0 5px rgba(233, 69, 96, 0.3); /* תמיד מצב לילה לצבע האקסנט */
+            text-shadow: 0 0 5px rgba(233, 69, 96, 0.3);
             transition: color 0.5s ease;
         }
 
@@ -96,7 +95,7 @@
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            cursor: pointer;
+            cursor: text; /* שינוי לטקסט */
             outline: none;
             transition: background-color 0.5s ease, color 0.5s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
@@ -120,6 +119,11 @@
             font-size: 0.8em;
             transition: color 0.5s ease;
         }
+        /* הסתרת החץ עבור שדה קלט טקסט */
+        .select-wrapper.text-input::after {
+            display: none;
+        }
+
 
         .sidebar .nav-buttons {
             display: flex;
@@ -146,7 +150,6 @@
             color: var(--accent-color);
         }
 
-        /* כפתור מצב יום/לילה */
         .theme-toggle-button {
             background-color: var(--button-bg);
             color: white;
@@ -155,7 +158,7 @@
             border-radius: 20px;
             cursor: pointer;
             font-size: 0.9em;
-            margin-top: auto; /* מיקום בתחתית הסידבאר */
+            margin-top: auto;
             align-self: center;
             transition: background-color 0.3s ease, transform 0.2s ease, color 0.5s ease;
         }
@@ -165,8 +168,6 @@
             transform: scale(1.05);
         }
 
-
-        /* אזור ראשי - צ'אט וסוף שיר */
         .main-content {
             flex-grow: 1;
             display: flex;
@@ -207,7 +208,6 @@
             position: relative;
         }
 
-        /* מסכים שונים שיחליפו ביניהם */
         .screen {
             position: absolute;
             top: 0;
@@ -370,8 +370,16 @@
             background-color: #8b2d46;
             border-color: #8b2d46;
         }
+        .library-item .action-button.export-options {
+            background-color: #2e5a1d; /* ירוק כהה */
+            border-color: #2e5a1d;
+        }
+        .library-item .action-button.export-options:hover {
+            background-color: #468b2d; /* ירוק בהיר יותר */
+            border-color: #468b2d;
+        }
 
-        /* סגנון הודעות צ'אט */
+
         .chat-container {
             flex-grow: 1;
             padding: 0px 0px;
@@ -408,7 +416,6 @@
             transition: background-color 0.5s ease, color 0.5s ease;
         }
 
-        /* עיצוב לתשובת AI */
         .ai-message.formatted-song {
             background-color: var(--ai-response-bg);
             padding: 25px;
@@ -418,9 +425,9 @@
             font-family: 'Playfair Display', serif;
             font-size: 1.15em;
             line-height: 1.7;
-            max-width: 85%; /* קצת יותר רחב */
-            margin: 15px auto; /* מרכוז */
-            direction: rtl; /* לוודא כיווניות */
+            max-width: 85%;
+            margin: 15px auto;
+            direction: rtl;
             color: var(--text-color);
             transition: background-color 0.5s ease, color 0.5s ease;
         }
@@ -444,6 +451,26 @@
         .ai-message.formatted-song strong {
             color: var(--accent-color);
             transition: color 0.5s ease;
+        }
+
+        /* כפתור עריכה להודעה אחרונה */
+        .edit-last-message-button {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 0.9em;
+            position: absolute;
+            bottom: 70px; /* מעל שדה הקלט */
+            right: 30px;
+            z-index: 10;
+        }
+        .edit-last-message-button:hover {
+            background-color: var(--accent-color);
+            color: white;
         }
 
         .chat-input-area {
@@ -501,7 +528,6 @@
             transform: scale(1.05);
         }
 
-        /* פוטר */
         .footer {
             background-color: var(--secondary-bg);
             padding: 15px;
@@ -515,7 +541,6 @@
             transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, color 0.5s ease;
         }
 
-        /* אנימציות */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -529,7 +554,6 @@
             to { opacity: 0; transform: translateX(-100%); }
         }
 
-        /* Media Queries להתאמה למסכים קטנים יותר */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -575,17 +599,21 @@
             .ai-message.formatted-song h4 {
                 font-size: 1.5em;
             }
+            .edit-last-message-button {
+                right: 15px;
+            }
         }
     </style>
     <script type="module">
         import { GoogleGenerativeAI } from "https://cdn.jsdelivr.net/npm/@google/generative-ai@0.14.0/dist/index.min.js";
         window.GoogleGenerativeAI = GoogleGenerativeAI;
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="sidebar">
         <h2>הגדרות שיר</h2>
-        <div class="select-wrapper">
+        <div class="select-wrapper text-input">
             <label for="gemini-api-key">מפתח API (Gemini):</label>
             <input type="text" id="gemini-api-key" placeholder="הכנס את מפתח ה-API שלך כאן">
         </div>
@@ -638,6 +666,7 @@
             <div class="screen chat-screen active" id="chat-screen">
                 <div class="chat-container" id="chat-container">
                     </div>
+                <button class="edit-last-message-button" id="edit-last-user-message-button" style="display: none;">ערוך הודעה אחרונה</button>
             </div>
 
             <div class="screen song-display-screen" id="song-display-screen">
@@ -647,6 +676,7 @@
                     <button class="nav-button" id="save-song-button">שמור שיר</button>
                     <button class="nav-button" id="new-chat-from-song-button">צ'אט חדש</button>
                     <button class="nav-button" id="edit-song-button">ערוך שיר</button>
+                    <button class="nav-button" id="export-song-button">ייצא שיר</button>
                 </div>
             </div>
 
@@ -692,6 +722,8 @@
         const libraryButton = document.getElementById('library-button');
         const shareSongButton = document.getElementById('share-song-button');
         const themeToggleButton = document.getElementById('theme-toggle-button');
+        const editLastUserMessageButton = document.getElementById('edit-last-user-message-button');
+        const exportSongButton = document.getElementById('export-song-button');
 
         const songDisplayScreen = document.getElementById('song-display-screen');
         const finalSongText = document.getElementById('final-song-text');
@@ -715,8 +747,7 @@
         let activeScreen = chatScreen;
         let isLightMode = JSON.parse(localStorage.getItem('aiMuseLightMode')) || false;
 
-        // הגדרת ה-AI גנרטור מחוץ לפונקציה
-        let generativeModel;
+        let generativeModel; // יוצהל כאן אך יאותחל רק עם מפתח API
 
         // --- פונקציות עזר כלליות ---
 
@@ -725,12 +756,16 @@
             messageDiv.classList.add('message', `${sender}-message`);
             if (isSong) {
                 messageDiv.classList.add('formatted-song');
-                messageDiv.innerHTML = formatSongText(text); // השתמש בפונקציית עיצוב
+                messageDiv.innerHTML = formatSongText(text);
             } else {
                 messageDiv.innerHTML = text.replace(/\n/g, '<br>');
             }
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            if (sender === 'user') {
+                editLastUserMessageButton.style.display = 'block';
+            }
         }
 
         function showScreen(screenToShow) {
@@ -751,14 +786,19 @@
                 if (screenToShow === chatScreen) {
                     chatInputArea.style.display = 'flex';
                     userInput.focus();
+                    const lastUserMessage = currentChat.findLast(msg => msg.sender === 'user');
+                    editLastUserMessageButton.style.display = lastUserMessage ? 'block' : 'none';
                 } else {
                     chatInputArea.style.display = 'none';
+                    editLastUserMessageButton.style.display = 'none';
                 }
 
                 if (screenToShow === songDisplayScreen) {
                     shareSongButton.style.display = 'inline-block';
+                    exportSongButton.style.display = 'inline-block';
                 } else {
                     shareSongButton.style.display = 'none';
+                    exportSongButton.style.display = 'none';
                 }
 
                 screenToShow.scrollTop = 0;
@@ -771,20 +811,11 @@
                 return "אנא הזן את מפתח ה-API שלך כדי להתחיל ביצירת שירים.";
             }
 
-            if (!generativeModel) {
-                try {
+            try {
+                if (!generativeModel) { // אתחול מודל רק פעם אחת עם מפתח API
                     const genAI = new GoogleGenerativeAI(apiKey);
                     generativeModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-                } catch (error) {
-                    console.error("שגיאה באתחול ה-API:", error);
-                    return "שגיאה באתחול מודל ה-AI. וודא שמפתח ה-API תקין.";
                 }
-            }
-
-            try {
-                const prompt = `אני רוצה שיר בנושא: "${message}". סגנון: ${style}, מצב רוח: ${mood}. השיר צריך להיות בעברית, לכלול כותרת, ויהיו בו לפחות שני בתים ופזמון. תנסה ליצור שיר מרגש ומעניין.` +
-                                `\n\nדוגמת מבנה: \nכותרת השיר\n\nבית ראשון...\n\nפזמון...\n\nבית שני...\n\nפזמון...\n\nגשר (אופציונלי)...\n\nסוף/אאוטרו (אופציונלי)...`;
-
 
                 const chat = generativeModel.startChat({
                     history: currentChat.map(msg => ({
@@ -792,51 +823,53 @@
                         parts: [{ text: msg.text }]
                     })),
                     generationConfig: {
-                        maxOutputTokens: 500,
+                        maxOutputTokens: 800, // הגדלה של כמות הטוקנים המקסימלית
                     },
                 });
+
+                const prompt = `צור שיר בעברית בנושא: "${message}". סגנון: ${style}, מצב רוח: ${mood}. השיר צריך לכלול כותרת ברורה, לפחות שני בתים ופזמון. אם רלוונטי, כלול גשר ואאוטרו קצר. נסה להיות יצירתי, רגשי ומעניין, ושמור על מבנה שיר קלאסי.`;
 
                 const result = await chat.sendMessage(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
                 console.error("שגיאה בקריאה ל-AI:", error);
-                if (error.message.includes("API key not valid")) {
-                    return "מפתח ה-API אינו תקין. אנא וודא שהזנת מפתח נכון.";
+                if (error.message.includes("API key not valid") || error.message.includes("400") || error.message.includes("403")) {
+                    return "מפתח ה-API אינו תקין או שאינו מורשה. אנא וודא שהזנת מפתח נכון ושהוא פעיל בחשבון גוגל שלך.";
                 }
                 return "מצטער, הייתה שגיאה ביצירת השיר. אנא נסה שוב מאוחר יותר.";
             }
         }
 
-        // פונקציה לעיצוב השיר
         function formatSongText(text) {
-            let formattedText = text;
+            let formattedText = text.trim();
 
-            // עיצוב כותרת: שורה ראשונה היא הכותרת
-            const firstNewlineIndex = formattedText.indexOf('\n');
-            if (firstNewlineIndex !== -1) {
-                const title = formattedText.substring(0, firstNewlineIndex).trim();
-                const restOfText = formattedText.substring(firstNewlineIndex).trim();
-                formattedText = `<h4>${title}</h4>` + restOfText;
+            // פיצול לכותרת ושאר הטקסט
+            const lines = formattedText.split('\n');
+            let title = '';
+            if (lines.length > 0 && lines[0].trim() !== '') {
+                title = lines[0].trim();
+                formattedText = lines.slice(1).join('\n').trim();
             }
 
-            // החלפת שתי ירידות שורה ב-<p> חדש (לבתים ופזמונים)
-            formattedText = formattedText.replace(/\n\n/g, '</p><p>');
+            // החלפת שתי ירידות שורה ב-</p><p> (לבתים ופזמונים)
+            formattedText = formattedText.replace(/\n\s*\n/g, '</p><p>');
 
             // החלפת ירידת שורה ב-<br> (לשורות בתוך בית)
             formattedText = formattedText.replace(/\n/g, '<br>');
 
             // עוטף את הכל בתג <p> אחד אם לא עוטף כבר
-            if (!formattedText.startsWith('<p>') && !formattedText.startsWith('<h4>')) {
-                 formattedText = `<p>${formattedText}</p>`;
-            } else if (formattedText.startsWith('<h4>') && !formattedText.includes('</p><p>')) { // אם רק כותרת ואין פסקאות נוספות
-                formattedText = formattedText.replace('</h4>', '</h4><p>') + '</p>';
+            if (!formattedText.startsWith('<p>')) {
+                formattedText = `<p>${formattedText}</p>`;
             }
 
-            // לוודא שאין <p><p> כפול
-            formattedText = formattedText.replace(/<p><p>/g, '<p>');
-            formattedText = formattedText.replace(/<\/p><\/p>/g, '</p>');
+            // הוספת הכותרת
+            if (title) {
+                formattedText = `<h4>${title}</h4>` + formattedText;
+            }
 
+            // הסרת <p> ריקים שנוצרו
+            formattedText = formattedText.replace(/<p>\s*<\/p>/g, '');
 
             return formattedText;
         }
@@ -853,6 +886,8 @@
             userInput.value = '';
             userInput.disabled = true;
             sendButton.disabled = true;
+            editLastUserMessageButton.style.display = 'none';
+
 
             displayMessage('AI Muse חושב...', 'ai');
 
@@ -863,10 +898,11 @@
 
             chatContainer.removeChild(chatContainer.lastChild); // הסרת הודעת ה"חושב"
 
-            // נבדוק אם התשובה היא שיר (לצורך הדגמה, נניח שאם התשובה ארוכה ומתחילה בכותרת, זה שיר)
-            const isSongResponse = aiResponse.includes('\n\n') && (aiResponse.includes('בית') || aiResponse.includes('פזמון') || aiResponse.split('\n').length > 5);
+            // בדיקה האם התשובה היא שיר לצורך שמירה ועיצוב.
+            // מבוסס על נוכחות כותרת או מספר שורות מספק
+            const isSongResponse = aiResponse.trim().split('\n').length > 5 || aiResponse.includes('בית') || aiResponse.includes('פזמון');
 
-            displayMessage(aiResponse, 'ai', isSongResponse); // העבר isSong כפרמטר
+            displayMessage(aiResponse, 'ai', isSongResponse);
 
             currentChat.push({ sender: 'ai', text: aiResponse, isSong: isSongResponse });
 
@@ -949,16 +985,21 @@
                 savedSongs.forEach((song, index) => {
                     const listItem = document.createElement('li');
                     listItem.classList.add('library-item');
+                    // ננסה לחלץ כותרת נקייה מהטקסט המלא
+                    const firstLine = song.text.split('\n')[0];
+                    const displayTitle = song.title || firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
+
                     listItem.innerHTML = `
                         <div class="library-item-header">
-                            <h4>${song.title || 'שיר ללא כותרת'}</h4>
+                            <h4>${displayTitle}</h4>
                             <span>${song.date} | ${song.style} | ${song.mood}</span>
                         </div>
-                        <p>${song.text.split('\n')[0].substring(0, 150)}...</p>
+                        <p>${song.text.split('\n')[1] ? song.text.split('\n')[1].substring(0, 150) + '...' : song.text.substring(0,150) + '...'}</p>
                         <div class="actions">
                             <button class="action-button view-song" data-index="${index}">צפה</button>
                             <button class="action-button share-song" data-index="${index}">שתף</button>
                             <button class="action-button delete" data-index="${index}">מחק</button>
+                            <button class="action-button export-options" data-index="${index}">ייצא</button>
                         </div>
                     `;
                     libraryList.appendChild(listItem);
@@ -984,6 +1025,13 @@
                         }
                     });
                 });
+                libraryList.querySelectorAll('.export-options').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = e.target.dataset.index;
+                        const song = savedSongs[index];
+                        showExportOptions(song.text, song.title || "שיר AI");
+                    });
+                });
             }
             showScreen(libraryScreen);
         }
@@ -1004,15 +1052,80 @@
                     console.log('השיר שותף בהצלחה!');
                 }).catch((error) => {
                     console.error('שגיאה בשיתוף:', error);
-                    navigator.clipboard.writeText(textToShare)
-                        .then(() => alert('השיר הועתק ללוח הגזירים ומוכן לשיתוף!'))
-                        .catch(() => alert('לא ניתן להעתיק את השיר.'));
+                    fallbackCopyTextToClipboard(textToShare);
                 });
             } else {
-                navigator.clipboard.writeText(textToShare)
-                    .then(() => alert('השיר הועתק ללוח הגזירים ומוכן לשיתוף!'))
-                    .catch(() => alert('לא ניתן להעתיק את השיר.'));
+                fallbackCopyTextToClipboard(textToShare);
             }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => alert('השיר הועתק ללוח הגזירים ומוכן לשיתוף!'))
+                .catch(() => alert('לא ניתן להעתיק את השיר.'));
+        }
+
+        function showExportOptions(content, defaultFileName) {
+            const format = prompt("באיזה פורמט תרצה לייצא?\nהקלד: pdf או txt", "pdf");
+            if (format) {
+                if (format.toLowerCase() === 'pdf') {
+                    exportToPdf(content, defaultFileName);
+                } else if (format.toLowerCase() === 'txt') {
+                    exportToTxt(content, defaultFileName);
+                } else {
+                    alert("פורמט לא נתמך. אנא בחר 'pdf' או 'txt'.");
+                }
+            }
+        }
+
+        function exportToTxt(content, fileName) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${fileName}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            alert(`השיר יוצא בהצלחה כ-${fileName}.txt!`);
+        }
+
+        function exportToPdf(content, fileName) {
+            if (typeof window.jspdf === 'undefined') {
+                alert("ספריית jspdf לא נטענה. אנא רענן את הדף ונסה שוב.");
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // כדי לתמוך בעברית, נצטרך להטמיע פונט שתומך בעברית.
+            // זהו תהליך מורכב יותר שדורש טעינת קובץ פונט (TTF) לתוך ה-PDF.
+            // בשביל דוגמה פשוטה, נשתמש ב-addFont ונקווה שיש פונט ברירת מחדל שתומך בעברית.
+            // למימוש מלא ומקצועי, יש צורך בטעינת פונטים מותאמים אישית (כגון Noto Sans Hebrew).
+
+            // דוגמה לשימוש ב-addFont (דורש קובץ פונט base64):
+            // doc.addFont('NotoSansHebrew-Regular.ttf', 'NotoSansHebrew', 'normal');
+            // doc.setFont('NotoSansHebrew');
+
+            doc.setFont('helvetica'); // פונט ברירת מחדל, לא תמיד תומך בעברית מלאה
+            doc.setR2L(true); // מצב מימין לשמאל
+
+            const lines = doc.splitTextToSize(content, 180); // 180mm רוחב טקסט
+
+            let y = 10;
+            doc.setFontSize(12);
+
+            lines.forEach(line => {
+                if (y > 280) { // New page if content overflows
+                    doc.addPage();
+                    y = 10;
+                }
+                doc.text(line, 190, y, { align: "right" });
+                y += 7; // Line height
+            });
+
+            doc.save(`${fileName}.pdf`);
+            alert(`השיר יוצא בהצלחה כ-${fileName}.pdf!`);
         }
 
         // --- ניהול מצב יום/לילה ---
@@ -1020,7 +1133,7 @@
         function applyTheme() {
             if (isLightMode) {
                 document.body.classList.add('light-mode');
-                themeToggleButton.textContent = 'עבור למצב לילה';
+                themeToggleButton.textContent = 'עבור למצב כהה';
             } else {
                 document.body.classList.remove('light-mode');
                 themeToggleButton.textContent = 'עבור למצב בהיר';
@@ -1058,21 +1171,43 @@
         });
 
         shareSongButton.addEventListener('click', () => shareSong(finalSongText.textContent));
+        exportSongButton.addEventListener('click', () => showExportOptions(finalSongText.textContent, prompt("הקלד שם קובץ לשיר (ללא סיומת):", "שיר AI") || "שיר AI"));
+
 
         editSongButton.addEventListener('click', () => {
-            const lastAiMessage = currentChat[currentChat.length - 1];
-            if (lastAiMessage && lastAiMessage.sender === 'ai' && lastAiMessage.isSong) {
-                currentChat.push({ sender: 'user', text: `אני רוצה לערוך את השיר האחרון: ${lastAiMessage.text.substring(0, 100)}...` });
+            const lastAiMessage = currentChat.findLast(msg => msg.sender === 'ai' && msg.isSong);
+            if (lastAiMessage) {
+                currentChat.push({ sender: 'user', text: `אני רוצה לערוך את השיר האחרון.` });
                 chatContainer.innerHTML = '';
                 currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
                 showScreen(chatScreen);
-                userInput.value = lastAiMessage.text; // טען את השיר לשדה הקלט
+                userInput.value = lastAiMessage.text;
                 userInput.focus();
             } else {
                 alert("אין שיר זמין לעריכה בצ'אט הנוכחי.");
                 showScreen(chatScreen);
             }
         });
+
+        editLastUserMessageButton.addEventListener('click', () => {
+            const lastUserMessageIndex = currentChat.findLastIndex(msg => msg.sender === 'user');
+            if (lastUserMessageIndex !== -1) {
+                const messageToEdit = currentChat[lastUserMessageIndex].text;
+
+                // הסר את ההודעה האחרונה של המשתמש ואת תגובת ה-AI שאחריה (אם קיימת)
+                currentChat.splice(lastUserMessageIndex);
+
+                // רענן את הצ'אט כדי להסיר את ההודעות
+                chatContainer.innerHTML = '';
+                currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                userInput.value = messageToEdit;
+                userInput.focus();
+                editLastUserMessageButton.style.display = 'none'; // הסתר את הכפתור בזמן עריכה
+            }
+        });
+
 
         historyButton.addEventListener('click', loadHistory);
         libraryButton.addEventListener('click', loadLibrary);
@@ -1082,8 +1217,15 @@
             applyTheme();
         });
 
+        // שמירת מפתח ה-API ב-localStorage
+        geminiApiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('geminiApiKey', geminiApiKeyInput.value.trim());
+            generativeModel = null; // אפס את המודל כדי שיאותחל מחדש עם המפתח החדש
+        });
+
         // --- אתחול ראשוני ---
-        applyTheme(); // החל את ערכת הנושא שנשמרה
+        applyTheme();
+        geminiApiKeyInput.value = localStorage.getItem('geminiApiKey') || ''; // טען מפתח API קיים
         startNewChat();
     </script>
 </body>
