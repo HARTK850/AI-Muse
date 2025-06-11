@@ -781,7 +781,8 @@
             try {
 
             window.GoogleGenerativeAI = GoogleGenerativeAI;
-                
+
+                }
                 // נאתחל את המודל רק אם הוא לא אותחל עדיין או אם מפתח ה-API השתנה
                 if (!generativeModel || generativeModel._apiKey !== apiKey) {
                     if (typeof GoogleGenerativeAI === 'undefined') {
