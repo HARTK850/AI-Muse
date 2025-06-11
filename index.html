@@ -95,7 +95,7 @@
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            cursor: text; /* שינוי לטקסט */
+            cursor: text;
             outline: none;
             transition: background-color 0.5s ease, color 0.5s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
@@ -119,7 +119,6 @@
             font-size: 0.8em;
             transition: color 0.5s ease;
         }
-        /* הסתרת החץ עבור שדה קלט טקסט */
         .select-wrapper.text-input::after {
             display: none;
         }
@@ -371,11 +370,11 @@
             border-color: #8b2d46;
         }
         .library-item .action-button.export-options {
-            background-color: #2e5a1d; /* ירוק כהה */
+            background-color: #2e5a1d;
             border-color: #2e5a1d;
         }
         .library-item .action-button.export-options:hover {
-            background-color: #468b2d; /* ירוק בהיר יותר */
+            background-color: #468b2d;
             border-color: #468b2d;
         }
 
@@ -451,26 +450,6 @@
         .ai-message.formatted-song strong {
             color: var(--accent-color);
             transition: color 0.5s ease;
-        }
-
-        /* כפתור עריכה להודעה אחרונה */
-        .edit-last-message-button {
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            font-size: 0.9em;
-            position: absolute;
-            bottom: 70px; /* מעל שדה הקלט */
-            right: 30px;
-            z-index: 10;
-        }
-        .edit-last-message-button:hover {
-            background-color: var(--accent-color);
-            color: white;
         }
 
         .chat-input-area {
@@ -599,15 +578,9 @@
             .ai-message.formatted-song h4 {
                 font-size: 1.5em;
             }
-            .edit-last-message-button {
-                right: 15px;
-            }
         }
     </style>
-    <script type="module">
-        import { GoogleGenerativeAI } from "https://cdn.jsdelivr.net/npm/@google/generative-ai@0.14.0/dist/index.min.js";
-        window.GoogleGenerativeAI = GoogleGenerativeAI;
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@google/generative-ai@0.14.0/dist/index.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -666,7 +639,6 @@
             <div class="screen chat-screen active" id="chat-screen">
                 <div class="chat-container" id="chat-container">
                     </div>
-                <button class="edit-last-message-button" id="edit-last-user-message-button" style="display: none;">ערוך הודעה אחרונה</button>
             </div>
 
             <div class="screen song-display-screen" id="song-display-screen">
@@ -709,7 +681,10 @@
         </footer>
     </div>
 
-    <script type="module">
+    <script type="text/javascript">
+        // הערה: שיניתי את ה-type של הסקריפט מ-"module" ל-"text/javascript"
+        // כדי להתאים לדרך שבה ספריית Gemini API נטענת כמשתנה גלובלי.
+
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
@@ -722,7 +697,6 @@
         const libraryButton = document.getElementById('library-button');
         const shareSongButton = document.getElementById('share-song-button');
         const themeToggleButton = document.getElementById('theme-toggle-button');
-        const editLastUserMessageButton = document.getElementById('edit-last-user-message-button');
         const exportSongButton = document.getElementById('export-song-button');
 
         const songDisplayScreen = document.getElementById('song-display-screen');
@@ -762,10 +736,6 @@
             }
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-
-            if (sender === 'user') {
-                editLastUserMessageButton.style.display = 'block';
-            }
         }
 
         function showScreen(screenToShow) {
@@ -786,11 +756,8 @@
                 if (screenToShow === chatScreen) {
                     chatInputArea.style.display = 'flex';
                     userInput.focus();
-                    const lastUserMessage = currentChat.findLast(msg => msg.sender === 'user');
-                    editLastUserMessageButton.style.display = lastUserMessage ? 'block' : 'none';
                 } else {
                     chatInputArea.style.display = 'none';
-                    editLastUserMessageButton.style.display = 'none';
                 }
 
                 if (screenToShow === songDisplayScreen) {
@@ -812,9 +779,15 @@
             }
 
             try {
-                if (!generativeModel) { // אתחול מודל רק פעם אחת עם מפתח API
+                // נאתחל את המודל רק אם הוא לא אותחל עדיין או אם מפתח ה-API השתנה
+                if (!generativeModel || generativeModel._apiKey !== apiKey) {
+                    if (typeof GoogleGenerativeAI === 'undefined') {
+                        console.error("GoogleGenerativeAI object is not defined. Ensure the script is loaded correctly.");
+                        return "שגיאה: ספריית ה-AI לא נטענה כראוי. אנא רענן את הדף.";
+                    }
                     const genAI = new GoogleGenerativeAI(apiKey);
                     generativeModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+                    generativeModel._apiKey = apiKey; // נשמור את המפתח כדי לדעת אם הוא השתנה
                 }
 
                 const chat = generativeModel.startChat({
@@ -823,7 +796,7 @@
                         parts: [{ text: msg.text }]
                     })),
                     generationConfig: {
-                        maxOutputTokens: 800, // הגדלה של כמות הטוקנים המקסימלית
+                        maxOutputTokens: 800,
                     },
                 });
 
@@ -886,8 +859,6 @@
             userInput.value = '';
             userInput.disabled = true;
             sendButton.disabled = true;
-            editLastUserMessageButton.style.display = 'none';
-
 
             displayMessage('AI Muse חושב...', 'ai');
 
@@ -899,7 +870,6 @@
             chatContainer.removeChild(chatContainer.lastChild); // הסרת הודעת ה"חושב"
 
             // בדיקה האם התשובה היא שיר לצורך שמירה ועיצוב.
-            // מבוסס על נוכחות כותרת או מספר שורות מספק
             const isSongResponse = aiResponse.trim().split('\n').length > 5 || aiResponse.includes('בית') || aiResponse.includes('פזמון');
 
             displayMessage(aiResponse, 'ai', isSongResponse);
@@ -987,7 +957,7 @@
                     listItem.classList.add('library-item');
                     // ננסה לחלץ כותרת נקייה מהטקסט המלא
                     const firstLine = song.text.split('\n')[0];
-                    const displayTitle = song.title || firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine;
+                    const displayTitle = song.title || (firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine);
 
                     listItem.innerHTML = `
                         <div class="library-item-header">
@@ -1103,7 +1073,6 @@
             // בשביל דוגמה פשוטה, נשתמש ב-addFont ונקווה שיש פונט ברירת מחדל שתומך בעברית.
             // למימוש מלא ומקצועי, יש צורך בטעינת פונטים מותאמים אישית (כגון Noto Sans Hebrew).
 
-            // דוגמה לשימוש ב-addFont (דורש קובץ פונט base64):
             // doc.addFont('NotoSansHebrew-Regular.ttf', 'NotoSansHebrew', 'normal');
             // doc.setFont('NotoSansHebrew');
 
@@ -1188,26 +1157,6 @@
                 showScreen(chatScreen);
             }
         });
-
-        editLastUserMessageButton.addEventListener('click', () => {
-            const lastUserMessageIndex = currentChat.findLastIndex(msg => msg.sender === 'user');
-            if (lastUserMessageIndex !== -1) {
-                const messageToEdit = currentChat[lastUserMessageIndex].text;
-
-                // הסר את ההודעה האחרונה של המשתמש ואת תגובת ה-AI שאחריה (אם קיימת)
-                currentChat.splice(lastUserMessageIndex);
-
-                // רענן את הצ'אט כדי להסיר את ההודעות
-                chatContainer.innerHTML = '';
-                currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-
-                userInput.value = messageToEdit;
-                userInput.focus();
-                editLastUserMessageButton.style.display = 'none'; // הסתר את הכפתור בזמן עריכה
-            }
-        });
-
 
         historyButton.addEventListener('click', loadHistory);
         libraryButton.addEventListener('click', loadLibrary);
