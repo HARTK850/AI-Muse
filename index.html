@@ -744,528 +744,558 @@
     </div>
 
     <script type="text/javascript">
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const songStyleSelect = document.getElementById('song-style');
-        const songMoodSelect = document.getElementById('song-mood');
-        const geminiApiKeyInput = document.getElementById('gemini-api-key');
-        const geminiModelSelect = document.getElementById('gemini-model'); // New
-
-        const newChatButton = document.getElementById('new-chat-button');
-        const historyButton = document.getElementById('history-button');
-        const libraryButton = document.getElementById('library-button');
-        const themeToggleButton = document.getElementById('theme-toggle-button');
-        const exportSongButton = document.getElementById('export-song-button');
-        const copyChatButton = document.getElementById('copy-chat-button'); // New
-        const exportChatButton = document.getElementById('export-chat-button'); // New
-
-
-        const songDisplayScreen = document.getElementById('song-display-screen');
-        const finalSongText = document.getElementById('final-song-text');
-        const saveSongButton = document.getElementById('save-song-button');
-        const newChatFromSongButton = document.getElementById('new-chat-from-song-button');
-        const chatInputArea = document.getElementById('chat-input-area');
-
-        const chatScreen = document.getElementById('chat-screen');
-        const historyScreen = document.getElementById('history-screen');
-        const historyList = document.getElementById('history-list');
-        const noHistoryMessage = document.getElementById('no-history-message');
-
-        const libraryScreen = document.getElementById('library-screen');
-        const libraryList = document.getElementById('library-list');
-        const noLibraryMessage = document.getElementById('no-library-message');
-
-        let currentChat = [];
-        let chatHistory = JSON.parse(localStorage.getItem('aiMuseChatHistory')) || [];
-        let savedSongs = JSON.parse(localStorage.getItem('aiMuseSavedSongs')) || [];
-        let activeScreen = chatScreen;
-        let isLightMode = JSON.parse(localStorage.getItem('aiMuseLightMode')) || false;
+        // וודאות לטעינת ספריית Google Generative AI
+        // אם GoogleGenerativeAI לא זמין, ננסה לטעון אותו שוב או להציג הודעת שגיאה
+        window.onload = function() {
+            if (typeof GoogleGenerativeAI === 'undefined') {
+                console.warn("GoogleGenerativeAI object not found on window. Attempting to reload script...");
+                const script = document.createElement('script');
+                script.src = 'generative-ai-0.14.0.min.js';
+                script.onload = () => {
+                    console.log("GoogleGenerativeAI script reloaded successfully.");
+                    initializePageLogic();
+                };
+                script.onerror = () => {
+                    console.error("Failed to load GoogleGenerativeAI script. AI functionality will not be available.");
+                    alert("שגיאה קריטית: ספריית ה-AI לא נטענה. אנא וודא שקובץ 'generative-ai-0.14.0.min.js' נמצא באותה תיקייה כמו קובץ ה-HTML שלך ונסה שוב.");
+                    // השבתת פונקציונליות ה-AI
+                    sendButton.disabled = true;
+                    userInput.disabled = true;
+                    geminiApiKeyInput.disabled = true;
+                    geminiModelSelect.disabled = true;
+                };
+                document.head.appendChild(script);
+            } else {
+                initializePageLogic();
+            }
+        };
 
         let generativeModelInstance = null; // שינוי שם המשתנה כדי למנוע בלבול
 
-        // --- פונקציות עזר כלליות ---
+        function initializePageLogic() {
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const songStyleSelect = document.getElementById('song-style');
+            const songMoodSelect = document.getElementById('song-mood');
+            const geminiApiKeyInput = document.getElementById('gemini-api-key');
+            const geminiModelSelect = document.getElementById('gemini-model');
 
-        function displayMessage(text, sender, isSong = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', `${sender}-message`);
-            if (isSong) {
-                messageDiv.classList.add('formatted-song');
-                messageDiv.innerHTML = formatSongText(text);
-            } else {
-                messageDiv.innerHTML = text.replace(/\n/g, '<br>');
-            }
+            const newChatButton = document.getElementById('new-chat-button');
+            const historyButton = document.getElementById('history-button');
+            const libraryButton = document.getElementById('library-button');
+            const themeToggleButton = document.getElementById('theme-toggle-button');
+            const exportSongButton = document.getElementById('export-song-button');
+            const copyChatButton = document.getElementById('copy-chat-button');
+            const exportChatButton = document.getElementById('export-chat-button');
 
-            if (sender === 'ai' && !isSong) { // הוספת כפתור העתקה רק להודעות AI רגילות
-                const copyButton = document.createElement('button');
-                copyButton.classList.add('copy-button');
-                copyButton.textContent = 'העתק';
-                copyButton.onclick = () => copyTextToClipboard(text);
-                messageDiv.appendChild(copyButton);
-            }
 
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+            const songDisplayScreen = document.getElementById('song-display-screen');
+            const finalSongText = document.getElementById('final-song-text');
+            const saveSongButton = document.getElementById('save-song-button');
+            const newChatFromSongButton = document.getElementById('new-chat-from-song-button');
+            const chatInputArea = document.getElementById('chat-input-area');
 
-        function showScreen(screenToShow) {
-            if (activeScreen === screenToShow) return;
+            const chatScreen = document.getElementById('chat-screen');
+            const historyScreen = document.getElementById('history-screen');
+            const historyList = document.getElementById('history-list');
+            const noHistoryMessage = document.getElementById('no-history-message');
 
-            activeScreen.classList.remove('active');
-            activeScreen.style.animation = 'slideOut 0.5s forwards';
+            const libraryScreen = document.getElementById('library-screen');
+            const libraryList = document.getElementById('library-list');
+            const noLibraryMessage = document.getElementById('no-library-message');
 
-            setTimeout(() => {
-                activeScreen.style.display = 'none';
-                activeScreen.style.animation = '';
+            let currentChat = [];
+            let chatHistory = JSON.parse(localStorage.getItem('aiMuseChatHistory')) || [];
+            let savedSongs = JSON.parse(localStorage.getItem('aiMuseSavedSongs')) || [];
+            let activeScreen = chatScreen;
+            let isLightMode = JSON.parse(localStorage.getItem('aiMuseLightMode')) || false;
 
-                screenToShow.style.display = 'flex';
-                screenToShow.classList.add('active');
-                screenToShow.style.animation = 'slideIn 0.5s forwards';
-                activeScreen = screenToShow;
 
-                if (screenToShow === chatScreen) {
-                    chatInputArea.style.display = 'flex';
-                    document.getElementById('chat-actions').style.display = 'flex'; // הצג כפתורי צ'אט
-                    userInput.focus();
+            // --- פונקציות עזר כלליות ---
+
+            function displayMessage(text, sender, isSong = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', `${sender}-message`);
+                if (isSong) {
+                    messageDiv.classList.add('formatted-song');
+                    messageDiv.innerHTML = formatSongText(text);
                 } else {
-                    chatInputArea.style.display = 'none';
-                    document.getElementById('chat-actions').style.display = 'none'; // הסתר כפתורי צ'אט
+                    messageDiv.innerHTML = text.replace(/\n/g, '<br>');
                 }
 
-                screenToShow.scrollTop = 0;
-            }, 500);
-        }
+                if (sender === 'ai' && !isSong) { // הוספת כפתור העתקה רק להודעות AI רגילות
+                    const copyButton = document.createElement('button');
+                    copyButton.classList.add('copy-button');
+                    copyButton.textContent = 'העתק';
+                    copyButton.onclick = () => copyTextToClipboard(text);
+                    messageDiv.appendChild(copyButton);
+                }
 
-        async function getAiResponse(message, style, mood, modelName) { // הוספת modelName
-            const apiKey = geminiApiKeyInput.value.trim();
-            if (!apiKey) {
-                return "אנא הזן את מפתח ה-API שלך כדי להתחיל ביצירת שירים.";
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             }
 
-            try {
-                // נאתחל את המודל רק אם הוא לא אותחל עדיין או אם מפתח ה-API או המודל השתנו
-                if (!generativeModelInstance || generativeModelInstance._apiKey !== apiKey || generativeModelInstance._modelName !== modelName) {
-                    if (typeof GoogleGenerativeAI === 'undefined') {
-                        console.error("GoogleGenerativeAI object is not defined. Ensure the script is loaded correctly.");
-                        return "שגיאה: ספריית ה-AI לא נטענה כראוי. אנא רענן את הדף או בדוק את הגדרות טעינת הסקריפט.";
+            function showScreen(screenToShow) {
+                if (activeScreen === screenToShow) return;
+
+                activeScreen.classList.remove('active');
+                activeScreen.style.animation = 'slideOut 0.5s forwards';
+
+                setTimeout(() => {
+                    activeScreen.style.display = 'none';
+                    activeScreen.style.animation = '';
+
+                    screenToShow.style.display = 'flex';
+                    screenToShow.classList.add('active');
+                    screenToShow.style.animation = 'slideIn 0.5s forwards';
+                    activeScreen = screenToShow;
+
+                    if (screenToShow === chatScreen) {
+                        chatInputArea.style.display = 'flex';
+                        document.getElementById('chat-actions').style.display = 'flex'; // הצג כפתורי צ'אט
+                        userInput.focus();
+                    } else {
+                        chatInputArea.style.display = 'none';
+                        document.getElementById('chat-actions').style.display = 'none'; // הסתר כפתורי צ'אט
                     }
-                    const genAI = new GoogleGenerativeAI(apiKey);
-                    generativeModelInstance = genAI.getGenerativeModel({ model: modelName }); // השתמש ב-modelName
-                    generativeModelInstance._apiKey = apiKey; // נשמור את המפתח כדי לדעת אם הוא השתנה
-                    generativeModelInstance._modelName = modelName; // נשמור את שם המודל
+
+                    screenToShow.scrollTop = 0;
+                }, 500);
+            }
+
+            async function getAiResponse(message, style, mood, modelName) {
+                const apiKey = geminiApiKeyInput.value.trim();
+                if (!apiKey) {
+                    return "אנא הזן את מפתח ה-API שלך כדי להתחיל ביצירת שירים.";
                 }
 
-                const chat = generativeModelInstance.startChat({
-                    history: currentChat.map(msg => ({
-                        role: msg.sender === 'user' ? 'user' : 'model',
-                        parts: [{ text: msg.text }]
-                    })),
-                    generationConfig: {
-                        maxOutputTokens: 800,
-                    },
-                });
-
-                const prompt = `צור שיר בעברית בנושא: "${message}". סגנון: ${style}, מצב רוח: ${mood}. השיר צריך לכלול כותרת ברורה, לפחות שני בתים ופזמון. אם רלוונטי, כלול גשר ואאוטרו קצר. נסה להיות יצירתי, רגשי ומעניין, ושמור על מבנה שיר קלאסי.`;
-
-                const result = await chat.sendMessage(prompt);
-                const response = await result.response;
-                return response.text();
-            } catch (error) {
-                console.error("שגיאה בקריאה ל-AI:", error);
-                if (error.message.includes("API key not valid") || error.message.includes("400") || error.message.includes("403")) {
-                    return "מפתח ה-API אינו תקין או שאינו מורשה. אנא וודא שהזנת מפתח נכון ושהוא פעיל בחשבון גוגל שלך.";
+                // לוודא שהאובייקט GoogleGenerativeAI זמין.
+                if (typeof GoogleGenerativeAI === 'undefined') {
+                    console.error("GoogleGenerativeAI object is not defined. AI functionality will not work.");
+                    return "שגיאה: ספריית ה-AI לא נטענה כראוי. אנא רענן את הדף או בדוק את הגדרות טעינת הסקריפט.";
                 }
-                return "מצטער, הייתה שגיאה ביצירת השיר. אנא נסה שוב מאוחר יותר.";
-            }
-        }
 
-        function formatSongText(text) {
-            let formattedText = text.trim();
+                try {
+                    // נאתחל את המודל רק אם הוא לא אותחל עדיין או אם מפתח ה-API או המודל השתנו
+                    if (!generativeModelInstance || generativeModelInstance._apiKey !== apiKey || generativeModelInstance._modelName !== modelName) {
+                        const genAI = new GoogleGenerativeAI(apiKey);
+                        generativeModelInstance = genAI.getGenerativeModel({ model: modelName });
+                        generativeModelInstance._apiKey = apiKey; // נשמור את המפתח כדי לדעת אם הוא השתנה
+                        generativeModelInstance._modelName = modelName; // נשמור את שם המודל
+                    }
 
-            // פיצול לכותרת ושאר הטקסט
-            const lines = formattedText.split('\n');
-            let title = '';
-            if (lines.length > 0 && lines[0].trim() !== '') {
-                title = lines[0].trim();
-                formattedText = lines.slice(1).join('\n').trim();
-            }
-
-            // החלפת שתי ירידות שורה ב-</p><p> (לבתים ופזמונים)
-            formattedText = formattedText.replace(/\n\s*\n/g, '</p><p>');
-
-            // החלפת ירידת שורה ב-<br> (לשורות בתוך בית)
-            formattedText = formattedText.replace(/\n/g, '<br>');
-
-            // עוטף את הכל בתג <p> אחד אם לא עוטף כבר
-            if (!formattedText.startsWith('<p>')) {
-                formattedText = `<p>${formattedText}</p>`;
-            }
-
-            // הוספת הכותרת
-            if (title) {
-                formattedText = `<h4>${title}</h4>` + formattedText;
-            }
-
-            // הסרת <p> ריקים שנוצרו
-            formattedText = formattedText.replace(/<p>\s*<\/p>/g, '');
-
-            return formattedText;
-        }
-
-        function copyTextToClipboard(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => alert('הטקסט הועתק בהצלחה!'))
-                .catch(() => alert('שגיאה בהעתקה.'));
-        }
-
-        // --- פונקציות לוגיקה ---
-
-        async function sendMessage() {
-            const messageText = userInput.value.trim();
-            if (messageText === '') return;
-
-            displayMessage(messageText, 'user');
-            currentChat.push({ sender: 'user', text: messageText });
-
-            userInput.value = '';
-            userInput.disabled = true;
-            sendButton.disabled = true;
-
-            displayMessage('AI Muse חושב...', 'ai');
-
-            const selectedStyle = songStyleSelect.value;
-            const selectedMood = songMoodSelect.value;
-            const selectedModel = geminiModelSelect.value; // קבל את המודל הנבחר
-
-            const aiResponse = await getAiResponse(messageText, selectedStyle, selectedMood, selectedModel); // העבר את המודל
-
-            chatContainer.removeChild(chatContainer.lastChild); // הסרת הודעת ה"חושב"
-
-            // בדיקה האם התשובה היא שיר לצורך שמירה ועיצוב.
-            const isSongResponse = aiResponse.trim().split('\n').length > 5 || aiResponse.includes('בית') || aiResponse.includes('פזמון');
-
-            displayMessage(aiResponse, 'ai', isSongResponse);
-
-            currentChat.push({ sender: 'ai', text: aiResponse, isSong: isSongResponse });
-
-            userInput.disabled = false;
-            sendButton.disabled = false;
-            userInput.focus();
-
-            if (isSongResponse) {
-                showFinalSong(aiResponse);
-            }
-        }
-
-        function showFinalSong(songText) {
-            finalSongText.innerHTML = formatSongText(songText);
-            showScreen(songDisplayScreen);
-        }
-
-        function startNewChat() {
-            if (currentChat.length > 1) { // שמור צ'אט רק אם יש בו יותר מהודעת פתיחה
-                if (!chatHistory.some(chat => JSON.stringify(chat.messages) === JSON.stringify(currentChat))) {
-                    const firstUserMessage = currentChat.find(msg => msg.sender === 'user');
-                    chatHistory.unshift({
-                        id: Date.now(),
-                        date: new Date().toLocaleDateString('he-IL'),
-                        summary: firstUserMessage ? firstUserMessage.text.substring(0, 50) + '...' : 'שיחה חדשה',
-                        messages: [...currentChat]
+                    const chat = generativeModelInstance.startChat({
+                        history: currentChat.map(msg => ({
+                            role: msg.sender === 'user' ? 'user' : 'model',
+                            parts: [{ text: msg.text }]
+                        })),
+                        generationConfig: {
+                            maxOutputTokens: 800,
+                        },
                     });
-                    localStorage.setItem('aiMuseChatHistory', JSON.stringify(chatHistory));
+
+                    const prompt = `צור שיר בעברית בנושא: "${message}". סגנון: ${style}, מצב רוח: ${mood}. השיר צריך לכלול כותרת ברורה, לפחות שני בתים ופזמון. אם רלוונטי, כלול גשר ואאוטרו קצר. נסה להיות יצירתי, רגשי ומעניין, ושמור על מבנה שיר קלאסי.`;
+
+                    const result = await chat.sendMessage(prompt);
+                    const response = await result.response;
+                    return response.text();
+                } catch (error) {
+                    console.error("שגיאה בקריאה ל-AI:", error);
+                    if (error.message.includes("API key not valid") || error.message.includes("400") || error.message.includes("403")) {
+                        return "מפתח ה-API אינו תקין או שאינו מורשה. אנא וודא שהזנת מפתח נכון ושהוא פעיל בחשבון גוגל שלך.";
+                    }
+                    return "מצטער, הייתה שגיאה ביצירת השיר. אנא נסה שוב מאוחר יותר.";
                 }
             }
-            currentChat = [{ sender: 'ai', text: 'שלום! אני AI Muse, ואני כאן כדי לעזור לך לכתוב שיר. ספר לי על מה תרצה לכתוב?' }];
-            chatContainer.innerHTML = '';
-            displayMessage(currentChat[0].text, 'ai');
-            showScreen(chatScreen);
-            userInput.value = '';
-        }
 
-        // --- פונקציות היסטוריה וספרייה ---
+            function formatSongText(text) {
+                let formattedText = text.trim();
 
-        function loadHistory() {
-            historyList.innerHTML = '';
-            if (chatHistory.length === 0) {
-                noHistoryMessage.style.display = 'block';
-            } else {
-                noHistoryMessage.style.display = 'none';
-                chatHistory.forEach((chat, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('history-item');
-                    listItem.innerHTML = `
-                        <div class="history-item-header">
-                            <h4>${chat.summary}</h4>
-                            <span>${chat.date}</span>
-                        </div>
-                        <p>${chat.messages[1] ? chat.messages[1].text.substring(0, 100) + '...' : ''}</p>
-                        <div class="actions">
-                            <button class="action-button view-chat" data-index="${index}">צפה בשיחה</button>
-                            <button class="action-button delete" data-index="${index}">מחק</button>
-                        </div>
-                    `;
-                    // מונע הקלקה על כל הפריט אם יש כפתורים בתוכו
-                    listItem.querySelector('.view-chat').addEventListener('click', (e) => {
-                        const idx = e.target.dataset.index;
-                        currentChat = [...chatHistory[idx].messages];
-                        chatContainer.innerHTML = '';
-                        currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
-                        showScreen(chatScreen);
-                        const lastAiMessage = currentChat[currentChat.length - 1];
-                        if (lastAiMessage && lastAiMessage.sender === 'ai' && lastAiMessage.isSong) {
-                             showFinalSong(lastAiMessage.text);
-                        } else {
-                            showScreen(chatScreen);
-                        }
-                        e.stopPropagation(); // מונע את הפעלת ה-listener של ה-li אם קיים
-                    });
-                     listItem.querySelector('.delete').addEventListener('click', (e) => {
-                        const idx = e.target.dataset.index;
-                        if (confirm(`האם אתה בטוח שברצונך למחוק את השיחה "${chatHistory[idx].summary}"?`)) {
-                            deleteChat(idx);
-                        }
-                        e.stopPropagation(); // מונע את הפעלת ה-listener של ה-li אם קיים
-                    });
+                // פיצול לכותרת ושאר הטקסט
+                const lines = formattedText.split('\n');
+                let title = '';
+                if (lines.length > 0 && lines[0].trim() !== '') {
+                    title = lines[0].trim();
+                    formattedText = lines.slice(1).join('\n').trim();
+                }
 
-                    historyList.appendChild(listItem);
-                });
+                // החלפת שתי ירידות שורה ב-</p><p> (לבתים ופזמונים)
+                formattedText = formattedText.replace(/\n\s*\n/g, '</p><p>');
+
+                // החלפת ירידת שורה ב-<br> (לשורות בתוך בית)
+                formattedText = formattedText.replace(/\n/g, '<br>');
+
+                // עוטף את הכל בתג <p> אחד אם לא עוטף כבר
+                if (!formattedText.startsWith('<p>')) {
+                    formattedText = `<p>${formattedText}</p>`;
+                }
+
+                // הוספת הכותרת
+                if (title) {
+                    formattedText = `<h4>${title}</h4>` + formattedText;
+                }
+
+                // הסרת <p> ריקים שנוצרו
+                formattedText = formattedText.replace(/<p>\s*<\/p>/g, '');
+
+                return formattedText;
             }
-            showScreen(historyScreen);
-        }
 
-        function deleteChat(index) {
-            chatHistory.splice(index, 1);
-            localStorage.setItem('aiMuseChatHistory', JSON.stringify(chatHistory));
-            loadHistory(); // רענן את רשימת ההיסטוריה
-            alert('השיחה נמחקה בהצלחה!');
-        }
-
-
-        function loadLibrary() {
-            libraryList.innerHTML = '';
-            if (savedSongs.length === 0) {
-                noLibraryMessage.style.display = 'block';
-            } else {
-                noLibraryMessage.style.display = 'none';
-                savedSongs.forEach((song, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('library-item');
-                    // ננסה לחלץ כותרת נקייה מהטקסט המלא
-                    const firstLine = song.text.split('\n')[0];
-                    const displayTitle = song.title || (firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine);
-
-                    listItem.innerHTML = `
-                        <div class="library-item-header">
-                            <h4>${displayTitle}</h4>
-                            <span>${song.date} | ${song.style} | ${song.mood}</span>
-                        </div>
-                        <p>${song.text.split('\n')[1] ? song.text.split('\n')[1].substring(0, 150) + '...' : song.text.substring(0,150) + '...'}</p>
-                        <div class="actions">
-                            <button class="action-button view-song" data-index="${index}">צפה</button>
-                            <button class="action-button share-song" data-index="${index}">שתף</button>
-                            <button class="action-button delete" data-index="${index}">מחק</button>
-                            <button class="action-button export-options" data-index="${index}">ייצא</button>
-                        </div>
-                    `;
-                    libraryList.appendChild(listItem);
-                });
-
-                libraryList.querySelectorAll('.view-song').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.dataset.index;
-                        showFinalSong(savedSongs[index].text);
-                    });
-                });
-                libraryList.querySelectorAll('.share-song').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.dataset.index;
-                        shareText(savedSongs[index].text, savedSongs[index].title || "שיר AI");
-                    });
-                });
-                libraryList.querySelectorAll('.delete').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.dataset.index;
-                        if (confirm(`האם אתה בטוח שברצונך למחוק את השיר "${savedSongs[index].title || 'ללא כותרת'}"?`)) {
-                            deleteSong(index);
-                        }
-                    });
-                });
-                libraryList.querySelectorAll('.export-options').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.dataset.index;
-                        const song = savedSongs[index];
-                        showExportOptions(song.text, song.title || "שיר AI");
-                    });
-                });
+            function copyTextToClipboard(text) {
+                navigator.clipboard.writeText(text)
+                    .then(() => alert('הטקסט הועתק בהצלחה!'))
+                    .catch(() => alert('שגיאה בהעתקה.'));
             }
-            showScreen(libraryScreen);
-        }
 
-        function deleteSong(index) {
-            savedSongs.splice(index, 1);
-            localStorage.setItem('aiMuseSavedSongs', JSON.stringify(savedSongs));
-            loadLibrary();
-            alert('השיר נמחק בהצלחה!');
-        }
+            // --- פונקציות לוגיקה ---
 
-        function shareText(textToShare, title = 'AI Muse - טקסט שנוצר בבינה מלאכותית') {
-            if (navigator.share) {
-                navigator.share({
-                    title: title,
-                    text: textToShare,
-                }).then(() => {
-                    console.log('הטקסט שותף בהצלחה!');
-                }).catch((error) => {
-                    console.error('שגיאה בשיתוף:', error);
-                    copyTextToClipboard(textToShare); // Fallback to copy
-                });
-            } else {
-                copyTextToClipboard(textToShare); // Fallback to copy
+            async function sendMessage() {
+                const messageText = userInput.value.trim();
+                if (messageText === '') return;
+
+                displayMessage(messageText, 'user');
+                currentChat.push({ sender: 'user', text: messageText });
+
+                userInput.value = '';
+                userInput.disabled = true;
+                sendButton.disabled = true;
+
+                displayMessage('AI Muse חושב...', 'ai');
+
+                const selectedStyle = songStyleSelect.value;
+                const selectedMood = songMoodSelect.value;
+                const selectedModel = geminiModelSelect.value; // קבל את המודל הנבחר
+
+                const aiResponse = await getAiResponse(messageText, selectedStyle, selectedMood, selectedModel); // העבר את המודל
+
+                chatContainer.removeChild(chatContainer.lastChild); // הסרת הודעת ה"חושב"
+
+                // בדיקה האם התשובה היא שיר לצורך שמירה ועיצוב.
+                const isSongResponse = aiResponse.trim().split('\n').length > 5 || aiResponse.includes('בית') || aiResponse.includes('פזמון');
+
+                displayMessage(aiResponse, 'ai', isSongResponse);
+
+                currentChat.push({ sender: 'ai', text: aiResponse, isSong: isSongResponse });
+
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+
+                if (isSongResponse) {
+                    showFinalSong(aiResponse);
+                }
             }
-        }
 
-        function showExportOptions(content, defaultFileName) {
-            const format = prompt("באיזה פורמט תרצה לייצא?\nהקלד: pdf או txt", "pdf");
-            if (format) {
-                if (format.toLowerCase() === 'pdf') {
-                    exportToPdf(content, defaultFileName);
-                } else if (format.toLowerCase() === 'txt') {
-                    exportToTxt(content, defaultFileName);
+            function showFinalSong(songText) {
+                finalSongText.innerHTML = formatSongText(songText);
+                showScreen(songDisplayScreen);
+            }
+
+            function startNewChat() {
+                if (currentChat.length > 1) { // שמור צ'אט רק אם יש בו יותר מהודעת פתיחה
+                    if (!chatHistory.some(chat => JSON.stringify(chat.messages) === JSON.stringify(currentChat))) {
+                        const firstUserMessage = currentChat.find(msg => msg.sender === 'user');
+                        chatHistory.unshift({
+                            id: Date.now(),
+                            date: new Date().toLocaleDateString('he-IL'),
+                            summary: firstUserMessage ? firstUserMessage.text.substring(0, 50) + '...' : 'שיחה חדשה',
+                            messages: [...currentChat]
+                        });
+                        localStorage.setItem('aiMuseChatHistory', JSON.stringify(chatHistory));
+                    }
+                }
+                currentChat = [{ sender: 'ai', text: 'שלום! אני AI Muse, ואני כאן כדי לעזור לך לכתוב שיר. ספר לי על מה תרצה לכתוב?' }];
+                chatContainer.innerHTML = '';
+                displayMessage(currentChat[0].text, 'ai');
+                showScreen(chatScreen);
+                userInput.value = '';
+            }
+
+            // --- פונקציות היסטוריה וספרייה ---
+
+            function loadHistory() {
+                historyList.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    noHistoryMessage.style.display = 'block';
                 } else {
-                    alert("פורמט לא נתמך. אנא בחר 'pdf' או 'txt'.");
+                    noHistoryMessage.style.display = 'none';
+                    chatHistory.forEach((chat, index) => {
+                        const listItem = document.createElement('li');
+                        listItem.classList.add('history-item');
+                        listItem.innerHTML = `
+                            <div class="history-item-header">
+                                <h4>${chat.summary}</h4>
+                                <span>${chat.date}</span>
+                            </div>
+                            <p>${chat.messages[1] ? chat.messages[1].text.substring(0, 100) + '...' : ''}</p>
+                            <div class="actions">
+                                <button class="action-button view-chat" data-index="${index}">צפה בשיחה</button>
+                                <button class="action-button delete" data-index="${index}">מחק</button>
+                            </div>
+                        `;
+                        // מונע הקלקה על כל הפריט אם יש כפתורים בתוכו
+                        listItem.querySelector('.view-chat').addEventListener('click', (e) => {
+                            const idx = e.target.dataset.index;
+                            currentChat = [...chatHistory[idx].messages];
+                            chatContainer.innerHTML = '';
+                            currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
+                            const lastAiMessage = currentChat[currentChat.length - 1];
+                            if (lastAiMessage && lastAiMessage.sender === 'ai' && lastAiMessage.isSong) {
+                                 showFinalSong(lastAiMessage.text);
+                            } else {
+                                showScreen(chatScreen);
+                            }
+                            e.stopPropagation(); // מונע את הפעלת ה-listener של ה-li אם קיים
+                        });
+                         listItem.querySelector('.delete').addEventListener('click', (e) => {
+                            const idx = e.target.dataset.index;
+                            if (confirm(`האם אתה בטוח שברצונך למחוק את השיחה "${chatHistory[idx].summary}"?`)) {
+                                deleteChat(idx);
+                            }
+                            e.stopPropagation(); // מונע את הפעלת ה-listener של ה-li אם קיים
+                        });
+
+                        historyList.appendChild(listItem);
+                    });
+                }
+                showScreen(historyScreen);
+            }
+
+            function deleteChat(index) {
+                chatHistory.splice(index, 1);
+                localStorage.setItem('aiMuseChatHistory', JSON.stringify(chatHistory));
+                loadHistory(); // רענן את רשימת ההיסטוריה
+                alert('השיחה נמחקה בהצלחה!');
+            }
+
+
+            function loadLibrary() {
+                libraryList.innerHTML = '';
+                if (savedSongs.length === 0) {
+                    noLibraryMessage.style.display = 'block';
+                } else {
+                    noLibraryMessage.style.display = 'none';
+                    savedSongs.forEach((song, index) => {
+                        const listItem = document.createElement('li');
+                        listItem.classList.add('library-item');
+                        // ננסה לחלץ כותרת נקייה מהטקסט המלא
+                        const firstLine = song.text.split('\n')[0];
+                        const displayTitle = song.title || (firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine);
+
+                        listItem.innerHTML = `
+                            <div class="library-item-header">
+                                <h4>${displayTitle}</h4>
+                                <span>${song.date} | ${song.style} | ${song.mood}</span>
+                            </div>
+                            <p>${song.text.split('\n')[1] ? song.text.split('\n')[1].substring(0, 150) + '...' : song.text.substring(0,150) + '...'}</p>
+                            <div class="actions">
+                                <button class="action-button view-song" data-index="${index}">צפה</button>
+                                <button class="action-button share-song" data-index="${index}">שתף</button>
+                                <button class="action-button delete" data-index="${index}">מחק</button>
+                                <button class="action-button export-options" data-index="${index}">ייצא</button>
+                            </div>
+                        `;
+                        libraryList.appendChild(listItem);
+                    });
+
+                    libraryList.querySelectorAll('.view-song').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = e.target.dataset.index;
+                            showFinalSong(savedSongs[index].text);
+                        });
+                    });
+                    libraryList.querySelectorAll('.share-song').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = e.target.dataset.index;
+                            shareText(savedSongs[index].text, savedSongs[index].title || "שיר AI");
+                        });
+                    });
+                    libraryList.querySelectorAll('.delete').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = e.target.dataset.index;
+                            if (confirm(`האם אתה בטוח שברצונך למחוק את השיר "${savedSongs[index].title || 'ללא כותרת'}"?`)) {
+                                deleteSong(index);
+                            }
+                        });
+                    });
+                    libraryList.querySelectorAll('.export-options').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = e.target.dataset.index;
+                            const song = savedSongs[index];
+                            showExportOptions(song.text, song.title || "שיר AI");
+                        });
+                    });
+                }
+                showScreen(libraryScreen);
+            }
+
+            function deleteSong(index) {
+                savedSongs.splice(index, 1);
+                localStorage.setItem('aiMuseSavedSongs', JSON.stringify(savedSongs));
+                loadLibrary();
+                alert('השיר נמחק בהצלחה!');
+            }
+
+            function shareText(textToShare, title = 'AI Muse - טקסט שנוצר בבינה מלאכותית') {
+                if (navigator.share) {
+                    navigator.share({
+                        title: title,
+                        text: textToShare,
+                    }).then(() => {
+                        console.log('הטקסט שותף בהצלחה!');
+                    }).catch((error) => {
+                        console.error('שגיאה בשיתוף:', error);
+                        copyTextToClipboard(textToShare); // Fallback to copy
+                    });
+                } else {
+                    copyTextToClipboard(textToShare); // Fallback to copy
                 }
             }
-        }
 
-        function exportToTxt(content, fileName) {
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${fileName}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-            alert(`הקובץ יוצא בהצלחה כ-${fileName}.txt!`);
-        }
-
-        function exportToPdf(content, fileName) {
-            if (typeof window.jspdf === 'undefined') {
-                alert("ספריית jspdf לא נטענה. אנא רענן את הדף ונסה שוב.");
-                return;
-            }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            doc.setFont('helvetica');
-            doc.setR2L(true); // מצב מימין לשמאל
-
-            const lines = doc.splitTextToSize(content, 180);
-
-            let y = 10;
-            doc.setFontSize(12);
-
-            lines.forEach(line => {
-                if (y > 280) { // New page if content overflows
-                    doc.addPage();
-                    y = 10;
+            function showExportOptions(content, defaultFileName) {
+                const format = prompt("באיזה פורמט תרצה לייצא?\nהקלד: pdf או txt", "pdf");
+                if (format) {
+                    if (format.toLowerCase() === 'pdf') {
+                        exportToPdf(content, defaultFileName);
+                    } else if (format.toLowerCase() === 'txt') {
+                        exportToTxt(content, defaultFileName);
+                    } else {
+                        alert("פורמט לא נתמך. אנא בחר 'pdf' או 'txt'.");
+                    }
                 }
-                doc.text(line, 190, y, { align: "right" });
-                y += 7; // Line height
+            }
+
+            function exportToTxt(content, fileName) {
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${fileName}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                alert(`הקובץ יוצא בהצלחה כ-${fileName}.txt!`);
+            }
+
+            function exportToPdf(content, fileName) {
+                if (typeof window.jspdf === 'undefined') {
+                    alert("ספריית jspdf לא נטענה. אנא רענן את הדף ונסה שוב.");
+                    return;
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFont('helvetica');
+                doc.setR2L(true); // מצב מימין לשמאל
+
+                const lines = doc.splitTextToSize(content, 180);
+
+                let y = 10;
+                doc.setFontSize(12);
+
+                lines.forEach(line => {
+                    if (y > 280) { // New page if content overflows
+                        doc.addPage();
+                        y = 10;
+                    }
+                    doc.text(line, 190, y, { align: "right" });
+                    y += 7; // Line height
+                });
+
+                doc.save(`${fileName}.pdf`);
+                alert(`הקובץ יוצא בהצלחה כ-${fileName}.pdf!`);
+            }
+
+            function getChatAsText() {
+                return currentChat.map(msg => {
+                    const senderName = msg.sender === 'user' ? 'אתה' : 'AI Muse';
+                    return `${senderName}:\n${msg.text}\n\n`;
+                }).join('');
+            }
+
+            // --- ניהול מצב יום/לילה ---
+
+            function applyTheme() {
+                if (isLightMode) {
+                    document.body.classList.add('light-mode');
+                    themeToggleButton.textContent = 'עבור למצב כהה';
+                } else {
+                    document.body.classList.remove('light-mode');
+                    themeToggleButton.textContent = 'עבור למצב בהיר';
+                }
+                localStorage.setItem('aiMuseLightMode', isLightMode);
+            }
+
+            // --- Event Listeners ---
+
+            sendButton.addEventListener('click', sendMessage);
+
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
             });
 
-            doc.save(`${fileName}.pdf`);
-            alert(`הקובץ יוצא בהצלחה כ-${fileName}.pdf!`);
-        }
+            newChatButton.addEventListener('click', startNewChat);
+            newChatFromSongButton.addEventListener('click', startNewChat);
 
-        function getChatAsText() {
-            return currentChat.map(msg => {
-                const senderName = msg.sender === 'user' ? 'אתה' : 'AI Muse';
-                return `${senderName}:\n${msg.text}\n\n`;
-            }).join('');
-        }
+            saveSongButton.addEventListener('click', () => {
+                const songTitle = prompt("תן שם לשיר שלך:", "השיר שלי");
+                if (songTitle !== null && finalSongText.textContent) {
+                    savedSongs.push({
+                        title: songTitle,
+                        text: finalSongText.textContent,
+                        style: songStyleSelect.value,
+                        mood: songMoodSelect.value,
+                        date: new Date().toLocaleDateString('he-IL')
+                    });
+                    localStorage.setItem('aiMuseSavedSongs', JSON.stringify(savedSongs));
+                    alert(`השיר "${songTitle}" נשמר בספרייה שלך!`);
+                }
+            });
 
-        // --- ניהול מצב יום/לילה ---
+            exportSongButton.addEventListener('click', () => {
+                const songText = finalSongText.textContent;
+                const songTitle = finalSongText.querySelector('h4') ? finalSongText.querySelector('h4').textContent : "שיר AI";
+                showExportOptions(songText, songTitle);
+            });
 
-        function applyTheme() {
-            if (isLightMode) {
-                document.body.classList.add('light-mode');
-                themeToggleButton.textContent = 'עבור למצב כהה';
-            } else {
-                document.body.classList.remove('light-mode');
-                themeToggleButton.textContent = 'עבור למצב בהיר';
-            }
-            localStorage.setItem('aiMuseLightMode', isLightMode);
-        }
+            copyChatButton.addEventListener('click', () => {
+                copyTextToClipboard(getChatAsText());
+            });
 
-        // --- Event Listeners ---
-
-        sendButton.addEventListener('click', sendMessage);
-
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        newChatButton.addEventListener('click', startNewChat);
-        newChatFromSongButton.addEventListener('click', startNewChat);
-
-        saveSongButton.addEventListener('click', () => {
-            const songTitle = prompt("תן שם לשיר שלך:", "השיר שלי");
-            if (songTitle !== null && finalSongText.textContent) {
-                savedSongs.push({
-                    title: songTitle,
-                    text: finalSongText.textContent,
-                    style: songStyleSelect.value,
-                    mood: songMoodSelect.value,
-                    date: new Date().toLocaleDateString('he-IL')
-                });
-                localStorage.setItem('aiMuseSavedSongs', JSON.stringify(savedSongs));
-                alert(`השיר "${songTitle}" נשמר בספרייה שלך!`);
-            }
-        });
-
-        exportSongButton.addEventListener('click', () => {
-            const songText = finalSongText.textContent;
-            const songTitle = finalSongText.querySelector('h4') ? finalSongText.querySelector('h4').textContent : "שיר AI";
-            showExportOptions(songText, songTitle);
-        });
-
-        copyChatButton.addEventListener('click', () => {
-            copyTextToClipboard(getChatAsText());
-        });
-
-        exportChatButton.addEventListener('click', () => {
-            showExportOptions(getChatAsText(), "צ'אט AI Muse");
-        });
+            exportChatButton.addEventListener('click', () => {
+                showExportOptions(getChatAsText(), "צ'אט AI Muse");
+            });
 
 
-        historyButton.addEventListener('click', loadHistory);
-        libraryButton.addEventListener('click', loadLibrary);
+            historyButton.addEventListener('click', loadHistory);
+            libraryButton.addEventListener('click', loadLibrary);
 
-        themeToggleButton.addEventListener('click', () => {
-            isLightMode = !isLightMode;
+            themeToggleButton.addEventListener('click', () => {
+                isLightMode = !isLightMode;
+                applyTheme();
+            });
+
+            // שמירת מפתח ה-API ושם המודל ב-localStorage
+            geminiApiKeyInput.addEventListener('change', () => {
+                localStorage.setItem('geminiApiKey', geminiApiKeyInput.value.trim());
+                generativeModelInstance = null; // אפס את המודל כדי שיאותחל מחדש עם המפתח החדש
+            });
+
+            geminiModelSelect.addEventListener('change', () => {
+                localStorage.setItem('geminiModel', geminiModelSelect.value);
+                generativeModelInstance = null; // אפס את המודל כדי שיאותחל מחדש עם המודל החדש
+            });
+
+            // --- אתחול ראשוני ---
             applyTheme();
-        });
-
-        // שמירת מפתח ה-API ושם המודל ב-localStorage
-        geminiApiKeyInput.addEventListener('change', () => {
-            localStorage.setItem('geminiApiKey', geminiApiKeyInput.value.trim());
-            generativeModelInstance = null; // אפס את המודל כדי שיאותחל מחדש עם המפתח החדש
-        });
-
-        geminiModelSelect.addEventListener('change', () => {
-            localStorage.setItem('geminiModel', geminiModelSelect.value);
-            generativeModelInstance = null; // אפס את המודל כדי שיאותחל מחדש עם המודל החדש
-        });
-
-        // --- אתחול ראשוני ---
-        applyTheme();
-        geminiApiKeyInput.value = localStorage.getItem('geminiApiKey') || ''; // טען מפתח API קיים
-        geminiModelSelect.value = localStorage.getItem('geminiModel') || 'gemini-pro'; // טען מודל AI קיים
-        startNewChat();
+            geminiApiKeyInput.value = localStorage.getItem('geminiApiKey') || ''; // טען מפתח API קיים
+            geminiModelSelect.value = localStorage.getItem('geminiModel') || 'gemini-pro'; // טען מודל AI קיים (ברירת מחדל)
+            startNewChat();
+        } // סיום initializePageLogic
     </script>
 </body>
 </html>
