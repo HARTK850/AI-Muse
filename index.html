@@ -181,6 +181,7 @@
             border-bottom: 1px solid var(--border-color);
             z-index: 5;
             transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+            position: relative; /* עבור כפתורי העתקה/ייצוא צ'אט */
         }
 
         .chat-header h1 {
@@ -198,6 +199,30 @@
             color: var(--text-color);
             transition: color 0.5s ease;
         }
+
+        .chat-actions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-actions button {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.5s ease;
+            font-size: 0.9em;
+        }
+        .chat-actions button:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
 
         .content-area {
             flex-grow: 1;
@@ -337,14 +362,14 @@
             transition: color 0.5s ease;
         }
 
-        .library-item .actions {
+        .history-item .actions, .library-item .actions {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
             margin-top: 10px;
         }
 
-        .library-item .action-button {
+        .history-item .action-button, .library-item .action-button {
             background-color: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
@@ -355,17 +380,17 @@
             font-size: 0.9em;
         }
 
-        .library-item .action-button:hover {
+        .history-item .action-button:hover, .library-item .action-button:hover {
             background-color: var(--accent-color);
             color: white;
             border-color: var(--accent-color);
         }
-        .library-item .action-button.delete {
+        .history-item .action-button.delete, .library-item .action-button.delete {
             background-color: #5a1d2e;
             border-color: #5a1d2e;
             transition: background-color 0.3s ease, border-color 0.3s ease, color 0.5s ease;
         }
-        .library-item .action-button.delete:hover {
+        .history-item .action-button.delete:hover, .library-item .action-button.delete:hover {
             background-color: #8b2d46;
             border-color: #8b2d46;
         }
@@ -377,7 +402,6 @@
             background-color: #468b2d;
             border-color: #468b2d;
         }
-
 
         .chat-container {
             flex-grow: 1;
@@ -397,6 +421,7 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             animation: fadeIn 0.5s ease-out;
             transition: background-color 0.5s ease, color 0.5s ease;
+            position: relative; /* עבור כפתורי העתקה */
         }
 
         .user-message {
@@ -414,6 +439,28 @@
             border-bottom-left-radius: 5px;
             transition: background-color 0.5s ease, color 0.5s ease;
         }
+        .ai-message .copy-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            color: var(--text-color);
+            transition: background-color 0.2s ease, color 0.2s ease;
+            display: none; /* נסתר כברירת מחדל */
+        }
+        .ai-message:hover .copy-button {
+            display: block; /* מוצג בריחוף */
+        }
+        .ai-message .copy-button:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
 
         .ai-message.formatted-song {
             background-color: var(--ai-response-bg);
@@ -578,6 +625,12 @@
             .ai-message.formatted-song h4 {
                 font-size: 1.5em;
             }
+            .chat-actions {
+                position: static; /* Stack on smaller screens */
+                justify-content: center;
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
         }
     </style>
     <script src="generative-ai-0.14.0.min.js"></script>
@@ -585,10 +638,17 @@
 </head>
 <body>
     <div class="sidebar">
-        <h2>הגדרות</h2>
+        <h2>הגדרות שיר</h2>
         <div class="select-wrapper text-input">
             <label for="gemini-api-key">מפתח API (Gemini):</label>
             <input type="text" id="gemini-api-key" placeholder="הכנס את מפתח ה-API שלך כאן">
+        </div>
+        <div class="select-wrapper">
+            <label for="gemini-model">מודל Gemini:</label>
+            <select id="gemini-model">
+                <option value="gemini-pro">Gemini Pro</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                </select>
         </div>
         <div class="select-wrapper">
             <label for="song-style">סגנון מוזיקלי:</label>
@@ -624,7 +684,6 @@
             <button class="nav-button" id="new-chat-button">צ'אט חדש</button>
             <button class="nav-button" id="history-button">היסטוריית צ'אטים</button>
             <button class="nav-button" id="library-button">הספרייה שלי</button>
-            <button class="nav-button" id="share-song-button" style="display: none;">שתף שיר</button>
         </div>
         <button class="theme-toggle-button" id="theme-toggle-button">עבור למצב בהיר</button>
     </div>
@@ -633,6 +692,10 @@
         <header class="chat-header">
             <h1>AI Muse</h1>
             <p>צור את השיר המושלם שלך עם בינה מלאכותית</p>
+            <div class="chat-actions" id="chat-actions">
+                <button id="copy-chat-button">העתק צ'אט</button>
+                <button id="export-chat-button">ייצא צ'אט</button>
+            </div>
         </header>
 
         <div class="content-area">
@@ -647,7 +710,6 @@
                 <div class="nav-buttons" style="flex-direction: row; justify-content: center; gap: 10px; margin-top: 30px;">
                     <button class="nav-button" id="save-song-button">שמור שיר</button>
                     <button class="nav-button" id="new-chat-from-song-button">צ'אט חדש</button>
-                    <button class="nav-button" id="edit-song-button">ערוך שיר</button>
                     <button class="nav-button" id="export-song-button">ייצא שיר</button>
                 </div>
             </div>
@@ -682,28 +744,27 @@
     </div>
 
     <script type="text/javascript">
-        // הערה: שיניתי את ה-type של הסקריפט מ-"module" ל-"text/javascript"
-        // כדי להתאים לדרך שבה ספריית Gemini API נטענת כמשתנה גלובלי.
-
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const songStyleSelect = document.getElementById('song-style');
         const songMoodSelect = document.getElementById('song-mood');
         const geminiApiKeyInput = document.getElementById('gemini-api-key');
+        const geminiModelSelect = document.getElementById('gemini-model'); // New
 
         const newChatButton = document.getElementById('new-chat-button');
         const historyButton = document.getElementById('history-button');
         const libraryButton = document.getElementById('library-button');
-        const shareSongButton = document.getElementById('share-song-button');
         const themeToggleButton = document.getElementById('theme-toggle-button');
         const exportSongButton = document.getElementById('export-song-button');
+        const copyChatButton = document.getElementById('copy-chat-button'); // New
+        const exportChatButton = document.getElementById('export-chat-button'); // New
+
 
         const songDisplayScreen = document.getElementById('song-display-screen');
         const finalSongText = document.getElementById('final-song-text');
         const saveSongButton = document.getElementById('save-song-button');
         const newChatFromSongButton = document.getElementById('new-chat-from-song-button');
-        const editSongButton = document.getElementById('edit-song-button');
         const chatInputArea = document.getElementById('chat-input-area');
 
         const chatScreen = document.getElementById('chat-screen');
@@ -721,7 +782,7 @@
         let activeScreen = chatScreen;
         let isLightMode = JSON.parse(localStorage.getItem('aiMuseLightMode')) || false;
 
-        let generativeModel; // יוצהל כאן אך יאותחל רק עם מפתח API
+        let generativeModelInstance = null; // שינוי שם המשתנה כדי למנוע בלבול
 
         // --- פונקציות עזר כלליות ---
 
@@ -734,6 +795,15 @@
             } else {
                 messageDiv.innerHTML = text.replace(/\n/g, '<br>');
             }
+
+            if (sender === 'ai' && !isSong) { // הוספת כפתור העתקה רק להודעות AI רגילות
+                const copyButton = document.createElement('button');
+                copyButton.classList.add('copy-button');
+                copyButton.textContent = 'העתק';
+                copyButton.onclick = () => copyTextToClipboard(text);
+                messageDiv.appendChild(copyButton);
+            }
+
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -755,46 +825,37 @@
 
                 if (screenToShow === chatScreen) {
                     chatInputArea.style.display = 'flex';
+                    document.getElementById('chat-actions').style.display = 'flex'; // הצג כפתורי צ'אט
                     userInput.focus();
                 } else {
                     chatInputArea.style.display = 'none';
-                }
-
-                if (screenToShow === songDisplayScreen) {
-                    shareSongButton.style.display = 'inline-block';
-                    exportSongButton.style.display = 'inline-block';
-                } else {
-                    shareSongButton.style.display = 'none';
-                    exportSongButton.style.display = 'none';
+                    document.getElementById('chat-actions').style.display = 'none'; // הסתר כפתורי צ'אט
                 }
 
                 screenToShow.scrollTop = 0;
             }, 500);
         }
 
-        async function getAiResponse(message, style, mood) {
+        async function getAiResponse(message, style, mood, modelName) { // הוספת modelName
             const apiKey = geminiApiKeyInput.value.trim();
             if (!apiKey) {
                 return "אנא הזן את מפתח ה-API שלך כדי להתחיל ביצירת שירים.";
             }
 
             try {
-
-            window.GoogleGenerativeAI = GoogleGenerativeAI;
-
-                }
-                // נאתחל את המודל רק אם הוא לא אותחל עדיין או אם מפתח ה-API השתנה
-                if (!generativeModel || generativeModel._apiKey !== apiKey) {
+                // נאתחל את המודל רק אם הוא לא אותחל עדיין או אם מפתח ה-API או המודל השתנו
+                if (!generativeModelInstance || generativeModelInstance._apiKey !== apiKey || generativeModelInstance._modelName !== modelName) {
                     if (typeof GoogleGenerativeAI === 'undefined') {
                         console.error("GoogleGenerativeAI object is not defined. Ensure the script is loaded correctly.");
-                        return "שגיאה: ספריית ה-AI לא נטענה כראוי. אנא רענן את הדף.";
+                        return "שגיאה: ספריית ה-AI לא נטענה כראוי. אנא רענן את הדף או בדוק את הגדרות טעינת הסקריפט.";
                     }
                     const genAI = new GoogleGenerativeAI(apiKey);
-                    generativeModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-                    generativeModel._apiKey = apiKey; // נשמור את המפתח כדי לדעת אם הוא השתנה
+                    generativeModelInstance = genAI.getGenerativeModel({ model: modelName }); // השתמש ב-modelName
+                    generativeModelInstance._apiKey = apiKey; // נשמור את המפתח כדי לדעת אם הוא השתנה
+                    generativeModelInstance._modelName = modelName; // נשמור את שם המודל
                 }
 
-                const chat = generativeModel.startChat({
+                const chat = generativeModelInstance.startChat({
                     history: currentChat.map(msg => ({
                         role: msg.sender === 'user' ? 'user' : 'model',
                         parts: [{ text: msg.text }]
@@ -851,6 +912,12 @@
             return formattedText;
         }
 
+        function copyTextToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => alert('הטקסט הועתק בהצלחה!'))
+                .catch(() => alert('שגיאה בהעתקה.'));
+        }
+
         // --- פונקציות לוגיקה ---
 
         async function sendMessage() {
@@ -868,8 +935,9 @@
 
             const selectedStyle = songStyleSelect.value;
             const selectedMood = songMoodSelect.value;
+            const selectedModel = geminiModelSelect.value; // קבל את המודל הנבחר
 
-            const aiResponse = await getAiResponse(messageText, selectedStyle, selectedMood);
+            const aiResponse = await getAiResponse(messageText, selectedStyle, selectedMood, selectedModel); // העבר את המודל
 
             chatContainer.removeChild(chatContainer.lastChild); // הסרת הודעת ה"חושב"
 
@@ -895,7 +963,7 @@
         }
 
         function startNewChat() {
-            if (currentChat.length > 1) {
+            if (currentChat.length > 1) { // שמור צ'אט רק אם יש בו יותר מהודעת פתיחה
                 if (!chatHistory.some(chat => JSON.stringify(chat.messages) === JSON.stringify(currentChat))) {
                     const firstUserMessage = currentChat.find(msg => msg.sender === 'user');
                     chatHistory.unshift({
@@ -922,7 +990,7 @@
                 noHistoryMessage.style.display = 'block';
             } else {
                 noHistoryMessage.style.display = 'none';
-                chatHistory.forEach(chat => {
+                chatHistory.forEach((chat, index) => {
                     const listItem = document.createElement('li');
                     listItem.classList.add('history-item');
                     listItem.innerHTML = `
@@ -931,9 +999,15 @@
                             <span>${chat.date}</span>
                         </div>
                         <p>${chat.messages[1] ? chat.messages[1].text.substring(0, 100) + '...' : ''}</p>
+                        <div class="actions">
+                            <button class="action-button view-chat" data-index="${index}">צפה בשיחה</button>
+                            <button class="action-button delete" data-index="${index}">מחק</button>
+                        </div>
                     `;
-                    listItem.addEventListener('click', () => {
-                        currentChat = [...chat.messages];
+                    // מונע הקלקה על כל הפריט אם יש כפתורים בתוכו
+                    listItem.querySelector('.view-chat').addEventListener('click', (e) => {
+                        const idx = e.target.dataset.index;
+                        currentChat = [...chatHistory[idx].messages];
                         chatContainer.innerHTML = '';
                         currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
                         showScreen(chatScreen);
@@ -943,12 +1017,29 @@
                         } else {
                             showScreen(chatScreen);
                         }
+                        e.stopPropagation(); // מונע את הפעלת ה-listener של ה-li אם קיים
                     });
+                     listItem.querySelector('.delete').addEventListener('click', (e) => {
+                        const idx = e.target.dataset.index;
+                        if (confirm(`האם אתה בטוח שברצונך למחוק את השיחה "${chatHistory[idx].summary}"?`)) {
+                            deleteChat(idx);
+                        }
+                        e.stopPropagation(); // מונע את הפעלת ה-listener של ה-li אם קיים
+                    });
+
                     historyList.appendChild(listItem);
                 });
             }
             showScreen(historyScreen);
         }
+
+        function deleteChat(index) {
+            chatHistory.splice(index, 1);
+            localStorage.setItem('aiMuseChatHistory', JSON.stringify(chatHistory));
+            loadHistory(); // רענן את רשימת ההיסטוריה
+            alert('השיחה נמחקה בהצלחה!');
+        }
+
 
         function loadLibrary() {
             libraryList.innerHTML = '';
@@ -988,7 +1079,7 @@
                 libraryList.querySelectorAll('.share-song').forEach(button => {
                     button.addEventListener('click', (e) => {
                         const index = e.target.dataset.index;
-                        shareSong(savedSongs[index].text);
+                        shareText(savedSongs[index].text, savedSongs[index].title || "שיר AI");
                     });
                 });
                 libraryList.querySelectorAll('.delete').forEach(button => {
@@ -1017,26 +1108,20 @@
             alert('השיר נמחק בהצלחה!');
         }
 
-        function shareSong(textToShare) {
+        function shareText(textToShare, title = 'AI Muse - טקסט שנוצר בבינה מלאכותית') {
             if (navigator.share) {
                 navigator.share({
-                    title: 'AI Muse - שיר שנוצר בבינה מלאכותית',
+                    title: title,
                     text: textToShare,
                 }).then(() => {
-                    console.log('השיר שותף בהצלחה!');
+                    console.log('הטקסט שותף בהצלחה!');
                 }).catch((error) => {
                     console.error('שגיאה בשיתוף:', error);
-                    fallbackCopyTextToClipboard(textToShare);
+                    copyTextToClipboard(textToShare); // Fallback to copy
                 });
             } else {
-                fallbackCopyTextToClipboard(textToShare);
+                copyTextToClipboard(textToShare); // Fallback to copy
             }
-        }
-
-        function fallbackCopyTextToClipboard(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => alert('השיר הועתק ללוח הגזירים ומוכן לשיתוף!'))
-                .catch(() => alert('לא ניתן להעתיק את השיר.'));
         }
 
         function showExportOptions(content, defaultFileName) {
@@ -1061,7 +1146,7 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-            alert(`השיר יוצא בהצלחה כ-${fileName}.txt!`);
+            alert(`הקובץ יוצא בהצלחה כ-${fileName}.txt!`);
         }
 
         function exportToPdf(content, fileName) {
@@ -1072,18 +1157,10 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // כדי לתמוך בעברית, נצטרך להטמיע פונט שתומך בעברית.
-            // זהו תהליך מורכב יותר שדורש טעינת קובץ פונט (TTF) לתוך ה-PDF.
-            // בשביל דוגמה פשוטה, נשתמש ב-addFont ונקווה שיש פונט ברירת מחדל שתומך בעברית.
-            // למימוש מלא ומקצועי, יש צורך בטעינת פונטים מותאמים אישית (כגון Noto Sans Hebrew).
-
-            // doc.addFont('NotoSansHebrew-Regular.ttf', 'NotoSansHebrew', 'normal');
-            // doc.setFont('NotoSansHebrew');
-
-            doc.setFont('helvetica'); // פונט ברירת מחדל, לא תמיד תומך בעברית מלאה
+            doc.setFont('helvetica');
             doc.setR2L(true); // מצב מימין לשמאל
 
-            const lines = doc.splitTextToSize(content, 180); // 180mm רוחב טקסט
+            const lines = doc.splitTextToSize(content, 180);
 
             let y = 10;
             doc.setFontSize(12);
@@ -1098,7 +1175,14 @@
             });
 
             doc.save(`${fileName}.pdf`);
-            alert(`השיר יוצא בהצלחה כ-${fileName}.pdf!`);
+            alert(`הקובץ יוצא בהצלחה כ-${fileName}.pdf!`);
+        }
+
+        function getChatAsText() {
+            return currentChat.map(msg => {
+                const senderName = msg.sender === 'user' ? 'אתה' : 'AI Muse';
+                return `${senderName}:\n${msg.text}\n\n`;
+            }).join('');
         }
 
         // --- ניהול מצב יום/לילה ---
@@ -1143,24 +1227,20 @@
             }
         });
 
-        shareSongButton.addEventListener('click', () => shareSong(finalSongText.textContent));
-        exportSongButton.addEventListener('click', () => showExportOptions(finalSongText.textContent, prompt("הקלד שם קובץ לשיר (ללא סיומת):", "שיר AI") || "שיר AI"));
-
-
-        editSongButton.addEventListener('click', () => {
-            const lastAiMessage = currentChat.findLast(msg => msg.sender === 'ai' && msg.isSong);
-            if (lastAiMessage) {
-                currentChat.push({ sender: 'user', text: `אני רוצה לערוך את השיר האחרון.` });
-                chatContainer.innerHTML = '';
-                currentChat.forEach(msg => displayMessage(msg.text, msg.sender, msg.isSong));
-                showScreen(chatScreen);
-                userInput.value = lastAiMessage.text;
-                userInput.focus();
-            } else {
-                alert("אין שיר זמין לעריכה בצ'אט הנוכחי.");
-                showScreen(chatScreen);
-            }
+        exportSongButton.addEventListener('click', () => {
+            const songText = finalSongText.textContent;
+            const songTitle = finalSongText.querySelector('h4') ? finalSongText.querySelector('h4').textContent : "שיר AI";
+            showExportOptions(songText, songTitle);
         });
+
+        copyChatButton.addEventListener('click', () => {
+            copyTextToClipboard(getChatAsText());
+        });
+
+        exportChatButton.addEventListener('click', () => {
+            showExportOptions(getChatAsText(), "צ'אט AI Muse");
+        });
+
 
         historyButton.addEventListener('click', loadHistory);
         libraryButton.addEventListener('click', loadLibrary);
@@ -1170,15 +1250,21 @@
             applyTheme();
         });
 
-        // שמירת מפתח ה-API ב-localStorage
+        // שמירת מפתח ה-API ושם המודל ב-localStorage
         geminiApiKeyInput.addEventListener('change', () => {
             localStorage.setItem('geminiApiKey', geminiApiKeyInput.value.trim());
-            generativeModel = null; // אפס את המודל כדי שיאותחל מחדש עם המפתח החדש
+            generativeModelInstance = null; // אפס את המודל כדי שיאותחל מחדש עם המפתח החדש
+        });
+
+        geminiModelSelect.addEventListener('change', () => {
+            localStorage.setItem('geminiModel', geminiModelSelect.value);
+            generativeModelInstance = null; // אפס את המודל כדי שיאותחל מחדש עם המודל החדש
         });
 
         // --- אתחול ראשוני ---
         applyTheme();
         geminiApiKeyInput.value = localStorage.getItem('geminiApiKey') || ''; // טען מפתח API קיים
+        geminiModelSelect.value = localStorage.getItem('geminiModel') || 'gemini-pro'; // טען מודל AI קיים
         startNewChat();
     </script>
 </body>
